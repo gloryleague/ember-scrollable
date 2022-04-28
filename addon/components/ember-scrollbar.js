@@ -2,7 +2,6 @@ import { computed } from '@ember/object';
 import { isPresent } from '@ember/utils';
 import { throttle } from '@ember/runloop';
 import Component from '@ember/component';
-import DomMixin from 'ember-lifeline/mixins/dom';
 import layout from '../templates/components/ember-scrollbar';
 import { styleify } from '../util/css';
 import { THROTTLE_TIME_LESS_THAN_60_FPS_IN_MS } from './ember-scrollable';
@@ -17,7 +16,7 @@ const handleSelector = '.drag-handle';
  * @class EmberScrollbar
  * @extends Ember.Component
  */
-export default Component.extend(DomMixin, {
+export default Component.extend({
   layout,
   classNameBindings: [':tse-scrollbar', 'horizontal:horizontal:vertical'],
   onDrag(){},
@@ -82,11 +81,23 @@ export default Component.extend(DomMixin, {
     this.endDrag();
   },
 
+  init() {
+    this._super(...arguments);
+    this.onWindowMouseMove = this.onWindowMouseMove.bind(this)
+  },
+
   didInsertElement() {
     this._super(...arguments);
-    this.addEventListener(window, 'mousemove', (e) => {
-      throttle(this, this.updateMouseOffset, e, THROTTLE_TIME_LESS_THAN_60_FPS_IN_MS);
-    });
+    window.addEventListener("mousemove", this.onWindowMouseMove)
+  },
+
+  willDestroyElement() {
+    this._super(...arguments);
+    window.removeEventListener("mousemove", this.onWindowMouseMove)
+  },
+
+  onWindowMouseMove(e) {
+    throttle(this, this.updateMouseOffset, e, THROTTLE_TIME_LESS_THAN_60_FPS_IN_MS);
   },
 
   endDrag() {

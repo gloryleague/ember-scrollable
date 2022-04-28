@@ -5,8 +5,6 @@ import { isPresent } from '@ember/utils';
 import { inject as service } from '@ember/service';
 import { bind, scheduleOnce, debounce, throttle } from '@ember/runloop';
 import Component from '@ember/component';
-import InboundActionsMixin from 'ember-component-inbound-actions/inbound-actions';
-import DomMixin from 'ember-lifeline/mixins/dom';
 import layout from '../templates/components/ember-scrollable';
 import { Horizontal, Vertical } from '../classes/scrollable';
 import { getHeight, getWidth } from '../util/measurements';
@@ -19,7 +17,7 @@ export const THROTTLE_TIME_LESS_THAN_60_FPS_IN_MS = 1; // 60 fps -> 1 sec / 60 =
 const scrollbarSelector = '.tse-scrollbar';
 const contentSelector = '.tse-content';
 
-export default Component.extend(InboundActionsMixin, DomMixin, {
+export default Component.extend({
   layout,
   classNameBindings: [':ember-scrollable', ':tse-scrollable', 'horizontal', 'vertical'],
 
@@ -134,11 +132,17 @@ export default Component.extend(InboundActionsMixin, DomMixin, {
     }
   },
 
+  init() {
+    this._super(...arguments);
+    this.endDrag = this.endDrag.bind(this)
+    this._resizeHandler = this._resizeHandler.bind(this)
+  },
+
   didInsertElement() {
     this._super(...arguments);
     this.setupElements();
     scheduleOnce('afterRender', this, this.createScrollbarAndShowIfNecessary);
-    this.addEventListener(window, 'mouseup', this.endDrag);
+    window.addEventListener("mouseup", this.endDrag);
     this.setupResize();
 
     this.mouseMoveHandler = bind(this, this.onMouseMove)
@@ -148,6 +152,9 @@ export default Component.extend(InboundActionsMixin, DomMixin, {
   willDestroyElement() {
     this._super(...arguments);
     this.element.removeEventListener('transitionend webkitTransitionEnd', this._resizeHandler)
+
+    window.removeEventListener("mouseup", this.endDrag)
+    window.removeEventListener("resize", this._resizeHandler, true)
 
     this.element.removeEventListener('mousemove', this.mouseMoveHandler)
     this.mouseMoveHandler = null
@@ -240,7 +247,7 @@ export default Component.extend(InboundActionsMixin, DomMixin, {
   },
 
   setupResize() {
-    this.addEventListener(window, 'resize', this._resizeHandler, true);
+    window.addEventListener('resize', this._resizeHandler, true);
   },
 
   resizeScrollContent() {

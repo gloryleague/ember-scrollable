@@ -1,1 +1,6 @@
-<div class="drag-handle {{if showHandle 'visible'}}" onmousedown={{action 'startDrag'}} style={{handleStyles}}></div>
+<div
+  class="drag-handle {{if this.showHandle 'visible'}}"
+  {{on "mousedown" (action 'startDrag')}}
+  {{on "mousemove" (action 'startDrag')}}
+  style={{this.handleStyles}}
+></div>
